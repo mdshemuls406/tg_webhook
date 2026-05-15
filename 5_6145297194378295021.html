@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>账号格式转换</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --border: #1f2937;
+      --accent: #22c55e;
+      --accent-2: #f97316;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --error: #ef4444;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.15), transparent 35%),
+        radial-gradient(circle at 80% 0%, rgba(34, 197, 94, 0.12), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+
+    .layout {
+      width: min(1200px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 16px;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .editor {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      min-height: 320px;
+    }
+
+    .line-numbers {
+      background: #0c1322;
+      color: var(--muted);
+      padding: 12px 8px;
+      min-width: 48px;
+      text-align: right;
+      white-space: pre;
+      user-select: none;
+      font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 320px;
+      background: transparent;
+      color: var(--text);
+      border: none;
+      padding: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+      font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+      white-space: pre;
+      overflow: auto;
+    }
+
+    textarea:focus {
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    button {
+      background: linear-gradient(135deg, var(--accent), #16a34a);
+      border: none;
+      color: #0b1220;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      min-width: 120px;
+      box-shadow: 0 10px 20px rgba(34, 197, 94, 0.25);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(34, 197, 94, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .helper {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      max-width: 120px;
+    }
+
+    .status {
+      grid-column: 1 / -1;
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--text);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .status .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: #1f2937;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status .tag.success {
+      color: var(--accent);
+    }
+
+    .status .tag.error {
+      color: var(--error);
+    }
+
+    .status-list {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 8px;
+    }
+
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #111826;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .status-item.error {
+      border-color: rgba(239, 68, 68, 0.7);
+      color: var(--error);
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .status-item .line {
+      color: var(--text);
+    }
+
+    .push-status {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    @media (max-width: 960px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        flex-direction: row;
+      }
+
+      .helper {
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="layout">
+    <div>
+      <div class="panel-title">Input (one per line)</div>
+      <div class="editor">
+        <div class="line-numbers" id="sourceLines"></div>
+        <textarea id="source" wrap="off"
+          placeholder="Only supports: username|password|cookie or username|password|extra|cookie"></textarea>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="convert">Convert →</button>
+      <button id="push">Push ↑</button>
+      <div class="helper">Click convert; invalid lines will be marked; extra field sits between "||" and "|"</div>
+    </div>
+    <div>
+      <div class="panel-title">Output (copyable)</div>
+      <div class="editor">
+        <div class="line-numbers" id="targetLines"></div>
+        <textarea id="target" wrap="off" readonly placeholder="Converted result will appear here"></textarea>
+      </div>
+    </div>
+    <div class="status" id="summary">
+      <div class="tag success" id="okCount">Success: 0</div>
+      <div class="tag error" id="failCount">Failed: 0</div>
+    </div>
+    <div class="status-list" id="statusList"></div>
+  </div>
+
+  <script>
+    const source = document.getElementById('source');
+    const target = document.getElementById('target');
+    const sourceLines = document.getElementById('sourceLines');
+    const targetLines = document.getElementById('targetLines');
+    const convertBtn = document.getElementById('convert');
+    const pushBtn = document.getElementById('push');
+    const okCount = document.getElementById('okCount');
+    const failCount = document.getElementById('failCount');
+    const statusList = document.getElementById('statusList');
+
+    function updateLineNumbers(textarea, gutter) {
+      const lines = textarea.value.split(/\r?\n/).length || 1;
+      const numbers = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
+      gutter.textContent = numbers;
+      gutter.scrollTop = textarea.scrollTop;
+    }
+
+    source.addEventListener('input', () => updateLineNumbers(source, sourceLines));
+    target.addEventListener('input', () => updateLineNumbers(target, targetLines));
+    source.addEventListener('scroll', () => { sourceLines.scrollTop = source.scrollTop; });
+    target.addEventListener('scroll', () => { targetLines.scrollTop = target.scrollTop; });
+    updateLineNumbers(source, sourceLines);
+    updateLineNumbers(target, targetLines);
+
+    // 仅支持管道分隔：
+    // 1) username|password|cookie
+    // 2) username|password|extra|cookie
+    // 输出：username:password||extra|cookie||（无附加字段则为空）
+    function convertLines(raw) {
+      const lines = raw.split(/\r?\n/).filter(line => line.trim().length > 0);
+      const results = [];
+      const status = []; // 仅记录失败行，避免大数据量渲染过多节点
+      let ok = 0;
+      let fail = 0;
+
+      lines.forEach((line, idx) => {
+        const trimmed = line.trim();
+        let user = '';
+        let pass = '';
+        let extra = '';
+        let cookie = '';
+        const pipeParts = trimmed.split('|');
+        if (pipeParts.length >= 3) {
+          user = pipeParts[0].trim();
+          pass = pipeParts[1].trim();
+          extra = pipeParts.length >= 4 ? pipeParts[2].trim() : '';
+          cookie = pipeParts.slice(pipeParts.length >= 4 ? 3 : 2).join('|').trim();
+        }
+
+        // 验证基本字段是否存在
+        if (!user || !pass || !cookie) {
+          status.push({ line: idx + 1, state: 'error', message: '验证失败' });
+          fail += 1;
+          return;
+        }
+
+        // 验证 Cookie 格式：有效的 Cookie 必须包含 = 符号（如 key=value）
+        if (!cookie.includes('=')) {
+          status.push({ line: idx + 1, state: 'error', message: '验证失败' });
+          fail += 1;
+          return;
+        }
+
+        const converted = `${user}:${pass}||${extra}|${cookie}||`;
+        results.push(converted);
+        ok += 1;
+      });
+
+      return { text: results.join('\n'), status, ok, fail };
+    }
+
+    function renderStatus(status) {
+      statusList.innerHTML = '';
+      if (!status.length) {
+        const div = document.createElement('div');
+        div.className = 'status-item';
+        div.innerHTML = '<span class="line">All</span><span>All converted successfully</span>';
+        statusList.appendChild(div);
+        return;
+      }
+
+      const MAX_SHOW = 50;
+      const toShow = status.slice(0, MAX_SHOW);
+      toShow.forEach(item => {
+        const div = document.createElement('div');
+        div.className = `status-item ${item.state === 'error' ? 'error' : ''}`;
+        div.innerHTML = `<span class="line">Line ${item.line}</span><span>${item.message}</span>`;
+        statusList.appendChild(div);
+      });
+
+      if (status.length > MAX_SHOW) {
+        const more = document.createElement('div');
+        more.className = 'status-item';
+        more.innerHTML = `<span class="line">More</span><span>${status.length - MAX_SHOW} more errors not shown</span>`;
+        statusList.appendChild(more);
+      }
+    }
+
+    convertBtn.addEventListener('click', () => {
+      const { text, status, ok, fail } = convertLines(source.value);
+      target.value = text;
+      okCount.textContent = `Success: ${ok}`;
+      failCount.textContent = `Failed: ${fail}`;
+      renderStatus(status);
+      updateLineNumbers(target, targetLines);
+    });
+
+    // 推送设置与结果显示
+    const pushPanel = document.createElement('div');
+    pushPanel.className = 'status push-status';
+    pushPanel.style.marginTop = '12px';
+    pushPanel.innerHTML = `
+      <div id="pushResult" class="tag" style="min-width:120px;justify-content:center;">Not pushed</div>
+    `;
+    document.querySelector('.layout').appendChild(pushPanel);
+
+    function showPushResult(text, isError = false) {
+      const el = document.getElementById('pushResult');
+      el.textContent = text;
+      el.className = `tag ${isError ? 'error' : 'success'}`;
+    }
+
+    function buildPayload(text) {
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if (!lines.length) return '';
+      return lines.map(line => `accounts=${btoa(line)}`).join('\n');
+    }
+
+    pushBtn.addEventListener('click', async () => {
+      const url = 'https://accountmatrix.online/proxy.php';
+      const payload = buildPayload(target.value);
+
+      if (!payload) {
+        showPushResult('No data to push, convert first', true);
+        return;
+      }
+      showPushResult('Pushing...', false);
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: payload,
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          showPushResult(`Push failed: ${res.status} ${text}`, true);
+          return;
+        }
+
+        const data = await res.json();
+        if (data && data.data) {
+          const d = data.data;
+          showPushResult(`Success:${d.success_count} Failed:${d.failed_count} Total:${d.received_count}`, d.failed_count > 0);
+        } else {
+          showPushResult('Push succeeded, no data field returned', false);
+        }
+      } catch (err) {
+        showPushResult(`Push error: ${err.message}`, true);
+      }
+    });
+  </script>
+</body>
+
+</html>
