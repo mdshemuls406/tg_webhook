@@ -52,8 +52,8 @@ module.exports = async (req, res) => {
 
     if (!activationId || !code) return res.status(200).send('ok'); 
 
-    const token = "8932975551:AAGWLVTDiOeiGHrBJK2ZgZrun2QMCXAdMt8";
-    const adminChatId = "974358332"; 
+    const token = "8809273364:AAFB-LC2Kaqkg2GTrH1zQ9kLCcSZtW5RFIM";
+    const adminChatId = "7188760167"; 
 
     // Find User ID and Phone from Supabase
     let targetChatId = adminChatId;
